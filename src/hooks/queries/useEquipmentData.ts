@@ -35,15 +35,21 @@ export const useEquipmentData = () => {
           equipmentStateHistoryData,
         ] = await Promise.all([
           axios
-            .get("/data/equipment.json")
-            .then((res) => res.data)
+            .get("../../data/equipment.json")
+            .then((res) => {
+              // Verificar se os dados estão no formato correto
+              return Array.isArray(res.data) ? res.data : [];
+            })
             .catch((err) => {
               console.error("Erro ao carregar dados de equipamentos:", err);
               return [];
             }),
           axios
-            .get("/data/equipmentModel.json")
-            .then((res) => res.data)
+            .get("../../data/equipmentModel.json")
+            .then((res) => {
+              // Verificar se os dados estão no formato correto
+              return Array.isArray(res.data) ? res.data : [];
+            })
             .catch((err) => {
               console.error(
                 "Erro ao carregar dados de modelos de equipamentos:",
@@ -52,22 +58,31 @@ export const useEquipmentData = () => {
               return [];
             }),
           axios
-            .get("/data/equipmentPositionHistory.json")
-            .then((res) => res.data)
+            .get("../../data/equipmentPositionHistory.json")
+            .then((res) => {
+              return res.data;
+            })
             .catch((err) => {
-              console.error("Erro ao carregar dados de posições:", err);
+              console.error(
+                "Erro ao carregar dados de histórico de posições:",
+                err,
+              );
               return [];
             }),
           axios
-            .get("/data/equipmentState.json")
-            .then((res) => res.data)
+            .get("../../data/equipmentState.json")
+            .then((res) => {
+              return res.data;
+            })
             .catch((err) => {
               console.error("Erro ao carregar dados de estados:", err);
               return [];
             }),
           axios
-            .get("/data/equipmentStateHistory.json")
-            .then((res) => res.data)
+            .get("../../data/equipmentStateHistory.json")
+            .then((res) => {
+              return res.data;
+            })
             .catch((err) => {
               console.error(
                 "Erro ao carregar dados de histórico de estados:",
@@ -94,7 +109,7 @@ export const useEquipmentData = () => {
 
   // Processar os dados para obter as informações combinadas de cada equipamento
   useEffect(() => {
-    if (loading) return;
+    if (loading || !Array.isArray(equipment)) return;
 
     const processedEquipment = equipment.map((equip) => {
       // Encontrar o modelo do equipamento
@@ -108,8 +123,16 @@ export const useEquipmentData = () => {
             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
         );
 
-      const currentPosition =
+      const latestPosition =
         equipmentPositions.length > 0 ? equipmentPositions[0] : undefined;
+
+      const currentPosition = latestPosition
+        ? {
+            ...latestPosition,
+            latitude: latestPosition.latitude,
+            longitude: latestPosition.longitude,
+          }
+        : undefined;
 
       // Encontrar o histórico de estados do equipamento
       const equipmentStateHistoryEntries = stateHistory
