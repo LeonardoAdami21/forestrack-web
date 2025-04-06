@@ -1,9 +1,7 @@
-import React from 'react'
+import Home from "./pages/Home";
 
-const App: React.FC = () => {
-  return (
-    <div>Florest Track</div>
-  )
-}
+const App = () => {
+  return <Home />;
+};
 
-export default App
+export default App;
