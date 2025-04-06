@@ -1,199 +1,54 @@
-// src/hooks/useEquipmentData.ts
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Equipment,
   EquipmentModel,
-  Position,
+  EquipmentPositionHistory,
   EquipmentState,
   EquipmentStateHistory,
-  EquipmentWithDetails,
 } from "../../interfaces/Types";
-import axios from "axios";
+import equipment from "../../data/equipment.json";
+import equipmentModels from "../../data/equipmentModel.json";
+import equipmentPositions from "../../data/equipmentPositionHistory.json";
+import equipmentStates from "../../data/equipmentState.json";
+import equipmentStateHistory from "../../data/equipmentStateHistory.json";
 
-export const useEquipmentData = () => {
-  const [loading, setLoading] = useState(true);
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [equipmentModels, setEquipmentModels] = useState<EquipmentModel[]>([]);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [states, setStates] = useState<EquipmentState[]>([]);
-  const [stateHistory, setStateHistory] = useState<EquipmentStateHistory[]>([]);
-  const [equipmentWithDetails, setEquipmentWithDetails] = useState<
-    EquipmentWithDetails[]
-  >([]);
-  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(
-    null,
-  );
+export function useEquipments() {
+  const [ready, setReady] = useState(false);
+
+  const [data, setData] = useState({
+    equipment: equipment as Equipment[],
+    equipmentModels: equipmentModels as EquipmentModel[],
+    equipmentStates: equipmentStates as EquipmentState[],
+    equipmentPositionHistory: equipmentPositions as EquipmentPositionHistory[],
+    equipmentStateHistory: equipmentStateHistory as EquipmentStateHistory[],
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [
-          equipmentData,
-          equipmentModelData,
-          positionHistoryData,
-          equipmentStateData,
-          equipmentStateHistoryData,
-        ] = await Promise.all([
-          axios
-            .get("../../data/equipment.json")
-            .then((res) => {
-              // Verificar se os dados estão no formato correto
-              return Array.isArray(res.data) ? res.data : [];
-            })
-            .catch((err) => {
-              console.error("Erro ao carregar dados de equipamentos:", err);
-              return [];
-            }),
-          axios
-            .get("../../data/equipmentModel.json")
-            .then((res) => {
-              // Verificar se os dados estão no formato correto
-              return Array.isArray(res.data) ? res.data : [];
-            })
-            .catch((err) => {
-              console.error(
-                "Erro ao carregar dados de modelos de equipamentos:",
-                err,
-              );
-              return [];
-            }),
-          axios
-            .get("../../data/equipmentPositionHistory.json")
-            .then((res) => {
-              return res.data;
-            })
-            .catch((err) => {
-              console.error(
-                "Erro ao carregar dados de histórico de posições:",
-                err,
-              );
-              return [];
-            }),
-          axios
-            .get("../../data/equipmentState.json")
-            .then((res) => {
-              return res.data;
-            })
-            .catch((err) => {
-              console.error("Erro ao carregar dados de estados:", err);
-              return [];
-            }),
-          axios
-            .get("../../data/equipmentStateHistory.json")
-            .then((res) => {
-              return res.data;
-            })
-            .catch((err) => {
-              console.error(
-                "Erro ao carregar dados de histórico de estados:",
-                err,
-              );
-              return [];
-            }),
-        ]);
+    // Simulate an API call
+    if (ready) return;
+    // Simulate a delay
+    const timeout = setTimeout(() => {
+      setReady(true);
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [ready]);
 
-        setEquipment(equipmentData);
-        setEquipmentModels(equipmentModelData);
-        setPositions(positionHistoryData);
-        setStates(equipmentStateData);
-        setStateHistory(equipmentStateHistoryData);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // Processar os dados para obter as informações combinadas de cada equipamento
   useEffect(() => {
-    if (loading || !Array.isArray(equipment)) return;
+    // Simulate an API call
+    const timeout = setTimeout(() => {
+      setData({
+        equipment: equipment as Equipment[],
+        equipmentModels: equipmentModels as EquipmentModel[],
+        equipmentStates: equipmentStates as EquipmentState[],
+        equipmentPositionHistory: equipmentPositions as EquipmentPositionHistory[],
+        equipmentStateHistory: equipmentStateHistory as EquipmentStateHistory[],
+      });
+      setReady(true);
+    })
 
-    const processedEquipment = equipment.map((equip) => {
-      // Encontrar o modelo do equipamento
-      const model = equipmentModels.find((model) => model.id === equip.modelId);
+    // Cleanup function to clear the timeout
+    return () => clearTimeout(timeout);
+  }, [ready]);
 
-      // Encontrar a posição mais recente do equipamento
-      const equipmentPositions = positions
-        .filter((pos) => pos.equipmentId === equip.id)
-        .sort(
-          (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        );
-
-      const latestPosition =
-        equipmentPositions.length > 0 ? equipmentPositions[0] : undefined;
-
-      const currentPosition = latestPosition
-        ? {
-            ...latestPosition,
-            latitude: latestPosition.latitude,
-            longitude: latestPosition.longitude,
-          }
-        : undefined;
-
-      // Encontrar o histórico de estados do equipamento
-      const equipmentStateHistoryEntries = stateHistory
-        .filter((history) => history.equipmentId === equip.id)
-        .sort(
-          (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        );
-
-      // Estado atual
-      const currentStateHistory =
-        equipmentStateHistoryEntries.length > 0
-          ? equipmentStateHistoryEntries[0]
-          : undefined;
-
-      const currentState = currentStateHistory
-        ? {
-            state: states.find(
-              (state) => state.id === currentStateHistory.stateId,
-            )!,
-            since: currentStateHistory.timestamp,
-          }
-        : undefined;
-
-      return {
-        ...equip,
-        model: model!,
-        currentPosition,
-        currentState,
-      };
-    });
-
-    setEquipmentWithDetails(processedEquipment);
-  }, [equipment, equipmentModels, positions, states, stateHistory, loading]);
-
-  // Função para obter o histórico de estados de um equipamento específico
-  const getEquipmentStateHistory = (equipmentId: string) => {
-    if (loading) return [];
-
-    const equipmentStateHistoryEntries = stateHistory
-      .filter((history) => history.equipmentId === equipmentId)
-      .sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
-
-    return equipmentStateHistoryEntries.map((historyEntry) => {
-      const state = states.find((s) => s.id === historyEntry.stateId);
-      return {
-        id: historyEntry.id,
-        state: state!,
-        timestamp: historyEntry.timestamp,
-      };
-    });
-  };
-
-  return {
-    loading,
-    equipmentWithDetails,
-    selectedEquipment,
-    setSelectedEquipment,
-    getEquipmentStateHistory,
-  };
-};
+  return { ...data, ready };
+}
