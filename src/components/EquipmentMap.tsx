@@ -3,10 +3,10 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { useEquipments } from "../hooks/queries/useEquipmentData";
 import { useFilters } from "../hooks/queries/useFilters";
-import { useState } from "react";
 import { SearchBar } from "./SearchBar";
 import { SelectFilter } from "./SelectFilter";
 import { CheckboxGroup } from "./CheckboxGroup";
+import { useState } from "react";
 
 const EquipmentMap = () => {
   const {
@@ -33,10 +33,16 @@ const EquipmentMap = () => {
     equipmentStateHistory,
   });
 
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null);
+  
+  if (selectedEquipmentId) {
+    const selectedEquipment = equipment.find((eq) => eq.id === selectedEquipmentId);
+    if (selectedEquipment) {
+      // Do something with the selected equipment
+      console.log("Selected Equipment:", selectedEquipment);
+    }
+  }
   //const [filteredEquipment, setFilteredEquipment] = useState(equipment);
-  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(
-    null,
-  );
   if (!ready) return <p>Carregando...</p>;
 
   const getLatestPosition = (equipmentId: string) => {

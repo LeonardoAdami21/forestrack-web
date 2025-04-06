@@ -16,7 +16,6 @@ interface Params {
 export function useFilters({
   equipment,
   equipmentModels,
-  equipmentStates,
   equipmentStateHistory,
 }: Params) {
   const [search, setSearch] = useState("");
