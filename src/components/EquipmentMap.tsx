@@ -107,19 +107,12 @@ const EquipmentMap = () => {
       <div className="p-4 bg-white shadow rounded-md space-y-2 z-[999] absolute top-4 left-4 w-80">
         <SearchBar value={search} onChange={setSearch} />
         <SelectFilter
-          options={equipment.map((eq) => ({
-            id: eq.id,
-            name: eq.name,
-          }))}
+          options={equipment}
           value={modelFilter}
           onChange={setModelFilter}
         />
         <CheckboxGroup
-          options={equipmentStates.map((state) => ({
-            id: state.id,
-            name: state.name,
-            color: state.color,
-          }))}
+          options={equipmentStates}
           selected={stateFilter}
           onChange={setStateFilter}
         />
