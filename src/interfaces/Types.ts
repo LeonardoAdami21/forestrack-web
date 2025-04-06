@@ -17,6 +17,10 @@ export interface EquipmentModel {
     equipmentStateId: string;
     value: number;
   }[];
+  dailyEarnings: {
+    equipmentStateId: string;
+    value: number;
+  }[];
 }
 
 export interface EquipmentPositionHistory {

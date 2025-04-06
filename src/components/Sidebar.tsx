@@ -1,80 +1,62 @@
-// src/components/Sidebar.tsx
-import React from "react";
-import { EquipmentWithDetails } from "../interfaces/Types";
+import {
+  Equipment,
+  EquipmentModel,
+  EquipmentState,
+  EquipmentStateHistory,
+} from "../interfaces/Types";
+import { formatDate } from "../utils/map.utils";
+import {
+  calculateProductivity,
+  calculateTotalEarnings,
+} from "../utils/map.utils";
 
-interface SidebarProps {
-  equipment: EquipmentWithDetails[];
-  selectedEquipment: string | null;
-  onSelectEquipment: (id: string) => void;
+interface Props {
+  equipment: Equipment;
+  model: EquipmentModel;
+  stateHistory: EquipmentStateHistory;
+  states: EquipmentState[];
+  onClose: () => void;
+  hourlyEarnings: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
+export const EquipmentSidebar = ({
   equipment,
-  selectedEquipment,
-  onSelectEquipment,
-}) => {
-  // Agrupar equipamentos por tipo
-  const groupedByType = equipment.reduce(
-    (groups, equip) => {
-      const type = equip.model.type;
-      if (!groups[type]) {
-        groups[type] = [];
-      }
-      groups[type].push(equip);
-      return groups;
-    },
-    {} as Record<string, EquipmentWithDetails[]>,
-  );
+  model,
+  stateHistory,
+  states,
+  onClose,
+}: Props) => {
+  const productivity = calculateProductivity(stateHistory, states);
+  const totalEarnings = calculateTotalEarnings(stateHistory, model, states);
 
   return (
-    <div className="bg-white h-full overflow-y-auto shadow-md p-4">
-      <h2 className="text-xl font-bold mb-4">Equipamentos</h2>
+    <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-lg p-4 overflow-y-auto z-50">
+      <button onClick={onClose} className="text-sm text-red-500 float-right">
+        Fechar
+      </button>
+      <h2 className="text-xl font-bold mb-2">{equipment.name}</h2>
+      <p className="text-sm text-gray-500 mb-4">{model.name}</p>
 
-      {Object.entries(groupedByType).map(([type, equipList]) => (
-        <div key={type} className="mb-4">
-          <h3 className="font-bold text-gray-700 mb-2">{type}</h3>
-          <ul className="space-y-2">
-            {equipList.map((equip) => (
-              <li
-                key={equip.id}
-                className={`
-                  p-2 rounded cursor-pointer transition-colors
-                  ${
-                    selectedEquipment === equip.id
-                      ? "bg-blue-100 border-l-4 border-blue-500"
-                      : "hover:bg-gray-100"
-                  }
-                `}
-                onClick={() => onSelectEquipment(equip.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{equip.name}</span>
-                  {equip.currentState && (
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{
-                        backgroundColor: equip.currentState.state.color,
-                      }}
-                      title={equip.currentState.state.name}
-                    />
-                  )}
-                </div>
-                <div className="text-sm text-gray-600">{equip.model.name}</div>
-                {equip.currentState && (
-                  <div
-                    className="text-xs mt-1"
-                    style={{ color: equip.currentState.state.color }}
-                  >
-                    {equip.currentState.state.name}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      <h3 className="text-md font-semibold mt-4">Histórico de Estados</h3>
+      <ul className="text-sm text-gray-700 space-y-1 mt-2">
+        {stateHistory.states.map((s, idx) => {
+          const state = states.find((e) => e.id === s.equipmentStateId);
+          return (
+            <li key={idx} className="flex justify-between">
+              <span>{formatDate(s.date)}</span>
+              <span style={{ color: state?.color }}>{state?.name}</span>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="mt-6">
+        <h3 className="font-bold text-sm">Produtividade:</h3>
+        <p className="text-green-700">{productivity.toFixed(1)}%</p>
+
+        <h3 className="font-bold text-sm mt-2">Ganho total:</h3>
+        <p className="text-blue-700">R$ {totalEarnings.toFixed(2)}</p>
+      </div>
     </div>
   );
 };
-
-export default Sidebar;

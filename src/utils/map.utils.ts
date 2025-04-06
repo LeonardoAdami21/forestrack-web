@@ -1,109 +1,73 @@
-// src/utils/mapUtils.ts
-import L from "leaflet";
-import { Position, EquipmentWithDetails } from "../interfaces/Types";
+import {
+  EquipmentModel,
+  EquipmentState,
+  EquipmentStateHistory,
+} from "../interfaces/Types";
 
-/**
- * Calcula o centro de um conjunto de posições
- */
-export const calculateCenter = (positions: Position[]): L.LatLngExpression => {
-  if (positions.length === 0) {
-    // Coordenadas padrão (pode ser ajustado para uma localização relevante para sua operação)
-    return [-23.5505, -46.6333]; // São Paulo, Brasil como padrão
-  }
-
-  const lat =
-    positions.reduce((sum, pos) => sum + pos.latitude, 0) / positions.length;
-  const lng =
-    positions.reduce((sum, pos) => sum + pos.longitude, 0) / positions.length;
-
-  return [lat, lng];
+export const calculateProductivity = (
+  history: EquipmentStateHistory,
+  states: EquipmentState[],
+): number => {
+  const totalHours = history.states.length;
+  const operatingState = states.find(
+    (s) => s.name.toLowerCase() === "operando",
+  );
+  if (!operatingState) return 0;
+  const operatingHours = history.states.filter(
+    (s) => s.equipmentStateId === operatingState.id,
+  ).length;
+  return (operatingHours / totalHours) * 100;
 };
 
-/**
- * Calcula os limites (bounds) para um conjunto de equipamentos
- */
-export const calculateBounds = (
-  equipment: EquipmentWithDetails[],
-): L.LatLngBounds | null => {
-  const positions = equipment
-    .filter((e) => e.currentPosition)
-    .map((e) => e.currentPosition!);
+export const calculateTotalEarnings = (
+  history: EquipmentStateHistory,
+  model: EquipmentModel,
+  states: EquipmentState[],
+): number => {
+  return history.states.reduce((total, s) => {
+    const earning = model.hourlyEarnings.find(
+      (e) => e.equipmentStateId === s.equipmentStateId,
+    );
+    const state = states.find((e) => e.id === s.equipmentStateId);
+    if (!earning || !state) return total;
+    const stateDate = new Date(s.date);
+    const nextStateDate = new Date(
+      history.states[history.states.indexOf(s) + 1]?.date ?? new Date(),
+    );
+    const hours = (nextStateDate.getTime() - stateDate.getTime()) / 3600000;
+    const earningValue = earning.value * hours;
+    const stateEarnings =
+      earningValue * (state.name.toLowerCase() === "operando" ? 1 : 0);
+    return total + stateEarnings;
+  }, 0);
+};
 
-  if (positions.length === 0) {
-    return null;
-  }
-
-  const bounds = L.latLngBounds([]);
-
-  positions.forEach((pos) => {
-    bounds.extend([pos.latitude, pos.longitude]);
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("pt-BR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
-
-  return bounds;
 };
-
-/**
- * Calcula a distância entre duas posições em metros
- */
-export const calculateDistance = (pos1: Position, pos2: Position): number => {
-  const lat1 = pos1.latitude;
-  const lon1 = pos1.longitude;
-  const lat2 = pos2.latitude;
-  const lon2 = pos2.longitude;
-
-  // Usando a fórmula de Haversine
-  const R = 6371000; // Raio da Terra em metros
-  const dLat = toRadians(lat2 - lat1);
-  const dLon = toRadians(lon2 - lon1);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
-
-  return distance;
+export const formatDateToISO = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toISOString();
 };
-
-/**
- * Converte graus para radianos
- */
-const toRadians = (degrees: number): number => {
-  return degrees * (Math.PI / 180);
+export const formatDateToISOWithoutTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toISOString().split("T")[0];
 };
-
-/**
- * Gera uma cor para um marcador com base no estado
- */
-export const getMarkerColor = (
-  stateId: string,
-  states: { id: string; color: string }[],
-): string => {
-  const state = states.find((s) => s.id === stateId);
-  return state ? state.color : "#999999"; // Cor padrão caso não encontre o estado
-};
-
-/**
- * Formata um timestamp para exibição
- */
-export const formatTimestamp = (timestamp: string): string => {
-  return new Date(timestamp).toLocaleString();
-};
-
-/**
- * Calcula a duração entre dois timestamps em formato legível
- */
-export const calculateDuration = (start: string, end?: string): string => {
-  const startDate = new Date(start);
-  const endDate = end ? new Date(end) : new Date();
-
-  const diffMs = endDate.getTime() - startDate.getTime();
-  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-  return `${diffHrs}h ${diffMins}m`;
+export const formatDateToISOWithTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  return (
+    date.toISOString().split("T")[0] +
+    " " +
+    date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  );
 };
